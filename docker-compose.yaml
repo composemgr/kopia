@@ -1,0 +1,34 @@
+# nginx proxy address - http://172.17.0.1:51515
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "1"
+
+services:
+  kopia:
+    image: kopia/kopia:latest
+    container_name: kopia-app
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - kopia
+    ports:
+      - "51515:51515"
+    environment:
+      TZ: ${TZ:-America/New_York}
+      PUID: ${SERVICE_USER:-1000}
+      PGID: ${SERVICE_GROUP:-1000}
+    volumes:
+      - ./rootfs/config/kopia:/config
+      - ./rootfs/data/kopia:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:51515"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  kopia:
+    external: false
