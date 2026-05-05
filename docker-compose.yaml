@@ -21,8 +21,8 @@ services:
       PUID: ${SERVICE_USER:-1000}
       PGID: ${SERVICE_GROUP:-1000}
     volumes:
-      - ./rootfs/config/kopia:/config
-      - ./rootfs/data/kopia:/data
+      - ./volumes/config/kopia:/config
+      - ./volumes/data/kopia:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:51515"]
       interval: 30s
