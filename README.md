@@ -47,8 +47,8 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/config/kopia` - Data storage
-- `./rootfs/data/kopia` - Data storage
+- `./volumes/config/kopia` - Data storage
+- `./volumes/data/kopia` - Data storage
 
 ## 🔍 Logging
 
