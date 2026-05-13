@@ -25,8 +25,6 @@ services:
       CONTAINER_NAME: kopia-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       KOPIA_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
-      PUID: ${SERVICE_USER:-1000}
-      PGID: ${SERVICE_GROUP:-1000}
     volumes:
       - ./volumes/config/kopia:/config
       - ./volumes/data/kopia:/data
