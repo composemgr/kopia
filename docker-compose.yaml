@@ -1,5 +1,6 @@
 # nginx proxy address - http://172.17.0.1:51515
 
+name: kopia
 x-logging: &default-logging
   driver: json-file
   options:
@@ -9,15 +10,17 @@ x-logging: &default-logging
 services:
   kopia:
     image: kopia/kopia:latest
+    pull_policy: always
     container_name: kopia-app
-    restart: unless-stopped
+    restart: always
     logging: *default-logging
     networks:
       - kopia
     ports:
-      - "51515:51515"
+      - "172.17.0.1:51515:51515"
     environment:
       TZ: ${TZ:-America/New_York}
+      KOPIA_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
       PUID: ${SERVICE_USER:-1000}
       PGID: ${SERVICE_GROUP:-1000}
     volumes:
@@ -31,4 +34,5 @@ services:
 
 networks:
   kopia:
+    name: kopia
     external: false
