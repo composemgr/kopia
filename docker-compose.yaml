@@ -16,10 +16,14 @@ services:
     logging: *default-logging
     networks:
       - kopia
+      - proxy
+      - cloudflare
     ports:
       - "172.17.0.1:51515:51515"
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: kopia-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       KOPIA_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
       PUID: ${SERVICE_USER:-1000}
       PGID: ${SERVICE_GROUP:-1000}
@@ -31,8 +35,28 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://kopia-app:51515'
+      - 'cloudflare.hostname=kopia.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.kopia-app.entrypoints=http'
+      - 'traefik.http.routers.kopia-app-secure.tls=true'
+      - 'traefik.http.routers.kopia-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.kopia-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.kopia-app.middlewares=kopia-app-https-redirect'
+      - 'traefik.http.routers.kopia-app-secure.entrypoints=https'
+      - 'traefik.http.routers.kopia-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.kopia-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.kopia-app-secure.service=kopia-app'
+      - 'traefik.http.services.kopia-app.loadbalancer.server.port=51515'
 
 networks:
   kopia:
     name: kopia
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
