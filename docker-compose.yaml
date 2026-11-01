@@ -1,60 +1,44 @@
-# nginx proxy address - http://172.17.0.1:51515
+# nginx proxy address - http://172.17.0.1:64228
 
 name: kopia
 x-logging: &default-logging
-  driver: json-file
   options:
-    max-size: "5m"
-    max-file: "1"
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
 
 services:
-  kopia:
+  app:
     image: kopia/kopia:latest
-    pull_policy: always
     container_name: kopia-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
+    pull_policy: always
+    user: '${SERVICE_USER:-0}:${SERVICE_GROUP:-0}'
+    command: server start --address=0.0.0.0:51515 --config-path=/app/config/repository.config --log-dir=/app/logs --cache-directory=/app/cache --content-directory=/data
     logging: *default-logging
-    networks:
-      - kopia
-      - proxy
-      - cloudflare
-    ports:
-      - "172.17.0.1:51515:51515"
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: kopia-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
-      KOPIA_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
+      KOPIA_PASSWORD: ${APP_ADMIN_PASS:-replace-with-a-random-password}
+    ports:
+      - '172.17.0.1:64228:51515'
     volumes:
-      - ./volumes/config/kopia:/config
-      - ./volumes/data/kopia:/data
+      - './volumes/config/kopia:/app/config:z'
+      - './volumes/logs/kopia:/app/logs:z'
+      - './volumes/cache/kopia:/app/cache:z'
+      - './volumes/data/kopia:/data:z'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:51515"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:51515']
       interval: 30s
       timeout: 10s
       retries: 3
-    labels:
-      - 'traefik.enable=true'
-      - 'cloudflare.enable=true'
-      - 'traefik.docker.network=proxy'
-      - 'cloudflare.service=http://kopia-app:51515'
-      - 'cloudflare.hostname=kopia.${CLOUDFLARE_ZONE_NAME:-}'
-      - 'traefik.http.routers.kopia-app.entrypoints=http'
-      - 'traefik.http.routers.kopia-app-secure.tls=true'
-      - 'traefik.http.routers.kopia-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.middlewares.kopia-app-https-redirect.redirectscheme.scheme=https'
-      - 'traefik.http.routers.kopia-app.middlewares=kopia-app-https-redirect'
-      - 'traefik.http.routers.kopia-app-secure.entrypoints=https'
-      - 'traefik.http.routers.kopia-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.routers.kopia-app-secure.tls.certresolver=cloudflare'
-      - 'traefik.http.routers.kopia-app-secure.service=kopia-app'
-      - 'traefik.http.services.kopia-app.loadbalancer.server.port=51515'
+    networks:
+      - kopia
 
 networks:
   kopia:
     name: kopia
     external: false
-  proxy:
-    external: true
-  cloudflare:
-    external: true
